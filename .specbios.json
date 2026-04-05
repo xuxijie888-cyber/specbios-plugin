@@ -1,0 +1,49 @@
+{
+  "projectName": "",
+  "template": "personal-default",
+  "executor": "aider",
+  "docsDir": "docs",
+  "autoProceed": true,
+  "taskGranularity": "fine",
+  "aiSplit": {
+    "enabled": false,
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet-20241022",
+    "apiKey": "",
+    "baseURL": "",
+    "maxSubtasks": 5,
+    "autoAccept": false
+  },
+  "executorRecommendation": {
+    "enabled": true,
+    "strategy": "rule-based",
+    "autoAccept": false,
+    "fallbackExecutor": "aider"
+  },
+  "dependencyRecognition": {
+    "enabled": true,
+    "strategy": "hybrid",
+    "autoAnalyze": true,
+    "autoAccept": false,
+    "confidenceThreshold": 70,
+    "maxSuggestions": 5,
+    "aiProvider": "anthropic",
+    "aiModel": "claude-3-5-sonnet-20241022",
+    "apiKey": "",
+    "baseURL": ""
+  },
+  "gitHooks": {
+    "enabled": true,
+    "hooks": {
+      "prepareCommitMsg": {
+        "enabled": true,
+        "addTaskInfo": true,
+        "addCoAuthor": true
+      },
+      "postCommit": {
+        "enabled": true,
+        "autoPush": false
+      }
+    }
+  }
+}
