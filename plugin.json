@@ -1,0 +1,26 @@
+{
+  "name": "specbios",
+  "version": "1.0.0",
+  "description": "Documentation-driven AI programming orchestrator - Manage long-term projects with persistent context",
+  "author": "SpecBIOS Team",
+  "repository": "https://github.com/xuxijie888-cyber/specbios",
+  "homepage": "https://github.com/xuxijie888-cyber/specbios#readme",
+  "license": "MIT",
+  "keywords": [
+    "project-management",
+    "documentation",
+    "task-orchestration",
+    "ai-programming",
+    "context-management"
+  ],
+  "skills": [
+    "skills/init.md",
+    "skills/task-add.md",
+    "skills/task-list.md",
+    "skills/task-update.md",
+    "skills/dispatch.md"
+  ],
+  "hooks": [
+    "hooks/on-start.md"
+  ]
+}
