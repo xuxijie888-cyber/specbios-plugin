@@ -3,243 +3,197 @@
 ## 1. 设计目标
 
 ### 核心目标
-将 SpecBIOS 的文档驱动工作流无缝集成到 Claude Code 中，提供原生的用户体验。
+将 SpecBIOS 的文档驱动工作流无缝集成到 Claude Code 中，并把长期项目的上下文恢复做成稳定闭环。
 
 ### 具体目标
-1. **零摩擦集成**: 用户无需切换工具，在 Claude Code 中完成所有操作
-2. **自动化**: 自动检测项目、加载上下文、更新状态
-3. **简单性**: 插件结构简单，易于维护和扩展
-4. **兼容性**: 与 SpecBIOS CLI 工具完全兼容，共享相同的文档格式
+1. **零摩擦集成**：用户无需切换工具，在 Claude Code 中完成所有操作
+2. **恢复优先**：会话中断后优先恢复当前任务、最近检查点和下一步动作
+3. **简单性**：尽量沿用 Claude Code 官方插件模式，不引入额外 runtime
+4. **兼容性**：与 SpecBIOS 文档格式兼容，保留 docs 作为长期真相层
 
-## 2. 分层架构
-
-### 插件结构
+## 2. 当前活动结构
 
 ```
 specbios-claude-plugin/
-├── plugin.json              # 插件清单（元数据）
-├── skills/                  # 斜杠命令层
-│   ├── init.md             # 项目初始化
-│   ├── task-add.md         # 任务管理
-│   ├── task-list.md        # 任务查看
-│   ├── task-update.md      # 任务更新
-│   └── dispatch.md         # 任务调度与执行
-└── hooks/                   # 事件钩子层
-    └── on-start.md         # 会话启动时自动检测
+├── .claude-plugin/
+│   └── plugin.json                # 当前活动 manifest
+├── commands/
+│   ├── specbios-init.md
+│   ├── specbios-task-add.md
+│   ├── specbios-task-list.md
+│   ├── specbios-task-update.md
+│   └── specbios-dispatch.md
+├── hooks/
+│   └── hooks.json                 # 官方 hook 配置入口
+├── hooks-handlers/
+│   └── session-start.sh           # SessionStart 恢复摘要注入
+└── docs/
+    ├── 00-project-dossier.md
+    ├── 01-architecture.md
+    ├── 02-data-model-and-apis.md
+    ├── 03-scope-and-mvp.md
+    ├── 04-roadmap-and-progress.md
+    └── 05-live-task-board.md
 ```
 
-### 三层架构
+> `skills/` 和仓库根目录 `plugin.json` 属于历史遗留，不再是当前主运行面。
 
-#### Layer 1: 插件清单层（plugin.json）
-- **职责**: 定义插件元数据、注册 skills 和 hooks
-- **内容**: 名称、版本、描述、作者、仓库地址
-- **格式**: JSON
+## 3. 三层恢复架构
 
-#### Layer 2: Skills 层（命令实现）
-- **职责**: 实现具体的用户命令
-- **格式**: Markdown 文件 + Frontmatter
-- **执行**: Claude Code 读取 Markdown 指令，由 Claude 执行
+### Layer 1: 长期真相层（docs）
+- **职责**：保存长期有效的项目背景、边界、架构和任务状态
+- **核心原则**：`docs/05-live-task-board.md` 的机器可解析任务区是唯一权威任务源
+- **组成**：
+  - `00-project-dossier.md`：项目背景与关键判断
+  - `01-architecture.md`：架构约束
+  - `02-data-model-and-apis.md`：数据/API 约束
+  - `03-scope-and-mvp.md`：范围边界
+  - `04-roadmap-and-progress.md`：阶段性路线图
+  - `05-live-task-board.md`：任务状态真相源
 
-**Skills 列表**:
-1. `init.md` - 创建 `.specbios.json` 和 `docs/` 结构
-2. `task-add.md` - 解析任务板，添加新任务
-3. `task-list.md` - 读取并格式化显示任务
-4. `task-update.md` - 更新任务状态
-5. `dispatch.md` - 读取文档，执行任务，更新状态
+### Layer 2: 短期交接层（handoff）
+- **职责**：保存最近一轮工作的短期恢复信息
+- **默认文件**：`.claude/specbios-session.local.md`
+- **内容限制**：只记录当前任务、最后检查点、下一原子步骤、阻塞、触碰文件、待确认问题
+- **设计原因**：把易变的会话状态从长期 docs 中隔离出去，避免长期文档被噪音污染
 
-#### Layer 3: Hooks 层（自动化）
-- **职责**: 在特定事件触发时自动执行
-- **触发时机**: 会话启动、目录切换等
-- **实现**: `on-start.md` 检测 `.specbios.json` 并提示用户
+### Layer 3: 启动引导层（CLAUDE.md + SessionStart）
+- **职责**：在 Claude 进入项目时，尽快告诉它应该如何恢复
+- **实现方式**：
+  - `CLAUDE.md`：写死稳定恢复协议
+  - `hooks/hooks.json` + `hooks-handlers/session-start.sh`：在 SessionStart 注入 recovery summary
+- **目标**：即使旧聊天上下文已经丢失，也能优先从磁盘状态恢复
 
-## 3. 核心工作流
+## 4. 恢复协议
 
-### 工作流 1: 初始化项目
+### 默认恢复顺序
+由 `.specbios.json` 提供默认配置：
+
+1. `.claude/specbios-session.local.md`
+2. `docs/05-live-task-board.md`
+3. `docs/04-roadmap-and-progress.md`
+4. `docs/03-scope-and-mvp.md`
+5. `docs/01-architecture.md`
+6. `docs/00-project-dossier.md`
+7. `docs/02-data-model-and-apis.md`
+
+### 恢复原则
+1. 优先信任磁盘状态，不信任过期聊天记忆
+2. 优先恢复“我现在该做什么”，而不是重新加载所有历史细节
+3. 任务状态只认机器可解析任务区
+4. 高层摘要区只做人类阅读摘要，不维护第二套实时状态
+
+## 5. 核心工作流
+
+### 工作流 1：初始化项目
 
 ```
 用户: /specbios-init
   ↓
-Claude 读取 init.md 指令
-  ↓
 创建 .specbios.json
   ↓
-创建 docs/ 目录和模板文件
+创建 CLAUDE.md
   ↓
-提示用户下一步操作
+创建 .claude/specbios-session.local.md
+  ↓
+创建 docs/00~05
+  ↓
+提示用户先补核心 docs，再开始 dispatch
 ```
 
-### 工作流 2: 添加任务
-
-```
-用户: /specbios-task-add "任务描述"
-  ↓
-Claude 读取 task-add.md 指令
-  ↓
-读取 docs/05-live-task-board.md
-  ↓
-解析现有任务，生成新 ID
-  ↓
-插入新任务行
-  ↓
-保存更新后的任务板
-```
-
-### 工作流 3: 调度执行（核心流程）
-
-```
-用户: /specbios-dispatch
-  ↓
-Claude 读取 dispatch.md 指令
-  ↓
-Step 1: 读取 .specbios.json（项目配置）
-  ↓
-Step 2: 读取 docs/05-live-task-board.md（找到 in_progress 任务）
-  ↓
-Step 3: 读取上下文文档
-  - docs/00-project-dossier.md（项目背景）
-  - docs/01-architecture.md（架构约束）
-  - docs/03-scope-and-mvp.md（范围边界）
-  ↓
-Step 4: 执行任务
-  - 理解任务需求
-  - 遵守架构和范围约束
-  - 编写代码/创建文件
-  - 测试验证
-  ↓
-Step 5: 更新任务状态
-  - 将任务标记为 [completed]
-  - 更新"当前已完成"摘要
-  - 提示用户继续下一个任务
-```
-
-### 工作流 4: 自动检测（无感知）
+### 工作流 2：会话启动自动恢复
 
 ```
 用户: cd project && claude
   ↓
-Claude Code 启动
+Claude 自动读取 CLAUDE.md
   ↓
-触发 on-start.md hook
+SessionStart hook 触发
   ↓
-检查 .specbios.json 是否存在
+检测 .specbios.json
   ↓
-如果存在:
-  - 读取项目名称
-  - 读取任务板
-  - 显示当前状态
-  - 建议下一步操作
+优先读取 handoff 文件
+  ↓
+若 handoff 缺失，则回退到 task board
+  ↓
+注入一段 recovery summary
 ```
 
-## 4. 关键设计原则
+### 工作流 3：调度执行
 
-### 原则 1: Markdown 即代码
-- **理念**: 所有 skills 都是 Markdown 文件，Claude 读取后执行
-- **优势**: 
-  - 无需编译或构建
-  - 易于阅读和修改
-  - 版本控制友好
-- **实现**: Frontmatter 定义元数据，正文描述执行逻辑
+```
+用户: /specbios-dispatch
+  ↓
+读取 .specbios.json
+  ↓
+按 recoveryReadOrder 读取上下文
+  ↓
+确定当前任务
+  ↓
+先写一次 handoff checkpoint
+  ↓
+执行任务
+  ↓
+更新任务板机器区
+  ↓
+再写一次 handoff，记录最新停止点或下一任务
+```
 
-### 原则 2: 文档是权威
-- **理念**: 所有项目信息存储在 `docs/` 中，不依赖外部数据库
-- **优势**:
-  - 可移植（git clone 即可）
-  - 可审查（纯文本）
-  - 可版本控制
-- **实现**: 任务板、架构、范围都是 Markdown 文件
+### 工作流 4：手动调整任务状态
 
-### 原则 3: 单一职责
-- **理念**: 每个 skill 只做一件事
-- **优势**:
-  - 易于理解
-  - 易于测试
-  - 易于组合
-- **实现**: 
-  - `init` 只负责初始化
-  - `task-add` 只负责添加任务
-  - `dispatch` 负责完整的执行流程
+```
+用户: /specbios-task-update T-XXX in_progress|completed
+  ↓
+更新机器可解析任务区
+  ↓
+如影响当前任务，则同步改写 handoff
+  ↓
+若板子不一致，则优先报错，不伪造恢复状态
+```
 
-### 原则 4: 自动化优先
-- **理念**: 能自动化的就不要手动
-- **优势**:
-  - 减少用户操作
-  - 减少出错
-  - 提升体验
-- **实现**:
-  - Hook 自动检测项目
-  - Dispatch 自动读取文档
-  - 自动更新任务状态
+## 6. 关键设计原则
 
-### 原则 5: 兼容 CLI
-- **理念**: 插件和 CLI 共享相同的文档格式
-- **优势**:
-  - 用户可以混用两种工具
-  - 文档可以互通
-  - 降低学习成本
-- **实现**: 
-  - 使用相同的 `.specbios.json` 格式
-  - 使用相同的任务板格式
-  - 使用相同的文档模板
+### 原则 1：文档是长期记忆
+长期有效的信息必须写进 docs，而不是依赖聊天历史。
 
-### 原则 6: 渐进增强
-- **理念**: 基础功能先行，高级功能后续添加
-- **优势**:
-  - 快速发布 MVP
-  - 根据反馈迭代
-  - 避免过度设计
-- **实现**:
-  - v1.0: 5 个核心命令
-  - v1.1: 错误处理优化
-  - v1.2: 依赖分析集成
-  - v2.0: GUI 界面
+### 原则 2：handoff 是短期记忆
+短期状态只放进 `.claude/specbios-session.local.md`，不要混入长期 docs。
 
-## 5. 技术约束
+### 原则 3：机器区是唯一任务真相
+任务状态只由 `05-live-task-board.md` 的机器可解析区定义。
 
-### Claude Code 插件系统约束
-- 插件必须有 `plugin.json` 清单文件
-- Skills 必须是 Markdown 文件，带 Frontmatter
-- Hooks 必须指定触发条件（trigger）
-- 插件可以从 GitHub 或本地目录安装
+### 原则 4：官方 hook 模式优先
+自动恢复优先用 `hooks/hooks.json` + handler 脚本，而不是只写概念性 markdown hook。
 
-### 文件系统约束
-- 所有文档存储在 `docs/` 目录
-- 配置文件是 `.specbios.json`
-- 任务板是 `docs/05-live-task-board.md`
-- 必须使用 UTF-8 编码
+### 原则 5：渐进增强
+本阶段只补恢复闭环，不扩展到依赖分析、执行器推荐、GUI 或团队协作。
+
+## 7. 技术约束
+
+### Claude Code 插件约束
+- 当前活动 manifest 位于 `.claude-plugin/plugin.json`
+- 用户命令面使用 `commands/*.md`
+- hook 使用 `hooks/hooks.json`
+- handler 脚本输出 `additionalContext`
+
+### 文件约束
+- `.specbios.json`：恢复配置中心
+- `CLAUDE.md`：稳定恢复协议
+- `.claude/specbios-session.local.md`：短期会话交接
+- `docs/05-live-task-board.md`：任务真相源
 
 ### 执行约束
-- Skills 由 Claude 解释执行，不是独立进程
-- 无法访问网络（除非通过 Claude 的工具）
-- 依赖 Claude Code 的文件读写能力
-- 需要用户授权才能修改文件
+- 命令由 Claude 解释执行，不是独立二进制
+- 不能把恢复逻辑建立在“上一轮聊天还在”这个前提上
+- 必须接受某些上下文文件可能缺失，并优雅回退
 
-## 6. 扩展性设计
+## 8. 当前不纳入
 
-### 未来可扩展点
+本阶段不做：
+- CLI core 重写
+- 依赖分析集成
+- 执行器推荐
+- GUI
+- 团队协作与后端同步
 
-#### 1. 更多 Skills
-- `/specbios-analyze-deps` - 依赖分析
-- `/specbios-recommend-executor` - 执行器推荐
-- `/specbios-split-task` - 任务拆分
-- `/specbios-export` - 导出报告
-
-#### 2. 更多 Hooks
-- `pre-dispatch` - 调度前检查
-- `post-task-complete` - 任务完成后通知
-- `on-error` - 错误处理
-
-#### 3. 集成其他工具
-- MCP Server 集成（访问外部 API）
-- LSP Server 集成（代码智能提示）
-- Git Hooks 集成（自动提交）
-
-#### 4. 配置增强
-- 自定义文档模板
-- 自定义任务状态
-- 自定义工作流
-
-### 保持简单
-虽然有很多扩展可能，但 v1.0 保持最小化：
-- 只做核心功能
-- 只依赖 Claude Code 基础能力
-- 不引入外部依赖
+当前增强版插件只解决一件核心事：**让 Claude Code 在长期项目里更可靠地找回工作上下文。**

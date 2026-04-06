@@ -41,16 +41,22 @@ claude
 ```
 
 这会创建：
-- `.specbios.json` - 项目配置
+- `.specbios.json` - 项目恢复配置
+- `CLAUDE.md` - Claude 恢复协议
+- `.claude/specbios-session.local.md` - 短期会话交接文件
 - `docs/` - 文档目录及模板
 
-#### 2. 定义你的项目
+### 2. 定义你的项目
 
 编辑 `docs/` 中的文档文件：
 - `00-project-dossier.md` - 项目背景和关键决策
 - `01-architecture.md` - 代码结构设计
 - `03-scope-and-mvp.md` - 要构建的功能（以及不做什么）
 - `05-live-task-board.md` - 实时任务板
+
+同时会生成两层恢复文件：
+- `CLAUDE.md` - 告诉 Claude 先按什么顺序恢复上下文
+- `.claude/specbios-session.local.md` - 保存最近一次工作停在哪、下一步做什么
 
 #### 3. 添加任务
 
@@ -67,10 +73,11 @@ claude
 ```
 
 Claude 会：
-- 读取你的文档
+- 先读取短期 handoff（如果存在）
+- 再按恢复顺序读取任务板和核心 docs
 - 理解当前任务
 - 编写代码
-- 完成后更新任务板
+- 完成后更新任务板和 handoff
 
 #### 5. 继续下一个任务
 
@@ -106,9 +113,9 @@ $ claude
 # 第 2 天：从上次中断的地方继续
 $ cd my-app
 $ claude
-> /specbios-task-list
+# SessionStart 会从磁盘状态注入恢复摘要
 > /specbios-dispatch
-# Claude 读取文档并继续工作
+# Claude 读取 handoff、任务板和 docs 后继续工作
 
 # 一周后：仍然记得所有内容
 $ cd my-app
@@ -116,7 +123,7 @@ $ claude
 > /specbios-task-list
 # 显示所有已完成和待完成的任务
 > /specbios-dispatch
-# 准确地从上次停下的地方继续
+# 根据磁盘文件恢复工作上下文，而不是依赖旧聊天记录
 ```
 
 ---
@@ -160,15 +167,22 @@ claude
 ```
 
 This creates:
-- `.specbios.json` - Project configuration
+- `.specbios.json` - Project recovery configuration
+- `CLAUDE.md` - Recovery protocol for Claude
+- `.claude/specbios-session.local.md` - Short-term session handoff
 - `docs/` - Documentation directory with templates
 
 #### 2. Define your project
 
 Edit the documentation files in `docs/`:
+- `00-project-dossier.md` - Project background and key decisions
 - `01-architecture.md` - How you want to structure the code
 - `03-scope-and-mvp.md` - What features to build (and what to skip)
-- `04-cognitive-profile.md` - Project background and context
+- `05-live-task-board.md` - Live task board
+
+You also get two recovery files:
+- `CLAUDE.md` - tells Claude the default recovery protocol
+- `.claude/specbios-session.local.md` - stores the latest stop point and next step
 
 #### 3. Add tasks
 
@@ -185,10 +199,11 @@ Edit the documentation files in `docs/`:
 ```
 
 Claude will:
-- Read your documentation
+- Read the short-term handoff first when it exists
+- Then read the task board and core docs in recovery order
 - Understand the current task
 - Write the code
-- Update the task board when done
+- Update both the task board and handoff when done
 
 #### 5. Continue with next task
 
@@ -224,10 +239,9 @@ $ claude
 # Day 2: Continue where you left off
 $ cd my-app
 $ claude
-# ✓ SpecBIOS project detected
-# → T-002 [In Progress] Add database connection
+# SessionStart shows the recovery summary from disk state
 > /specbios-dispatch
-# Claude reads the docs and continues working
+# Claude reads the handoff, task board, and docs before continuing
 
 # Week later: Still remembers everything
 $ cd my-app
@@ -235,7 +249,7 @@ $ claude
 > /specbios-task-list
 # Shows all completed and pending tasks
 > /specbios-dispatch
-# Picks up exactly where you left off
+# Reconstructs the working context from files, not old chat history
 ```
 
 ## Links

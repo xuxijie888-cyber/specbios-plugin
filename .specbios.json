@@ -1,49 +1,17 @@
 {
-  "projectName": "",
-  "template": "personal-default",
-  "executor": "aider",
+  "schemaVersion": 2,
+  "projectName": "SpecBIOS Claude Code Plugin",
+  "executor": "claude-code",
   "docsDir": "docs",
-  "autoProceed": true,
-  "taskGranularity": "fine",
-  "aiSplit": {
-    "enabled": false,
-    "provider": "anthropic",
-    "model": "claude-3-5-sonnet-20241022",
-    "apiKey": "",
-    "baseURL": "",
-    "maxSubtasks": 5,
-    "autoAccept": false
-  },
-  "executorRecommendation": {
-    "enabled": true,
-    "strategy": "rule-based",
-    "autoAccept": false,
-    "fallbackExecutor": "aider"
-  },
-  "dependencyRecognition": {
-    "enabled": true,
-    "strategy": "hybrid",
-    "autoAnalyze": true,
-    "autoAccept": false,
-    "confidenceThreshold": 70,
-    "maxSuggestions": 5,
-    "aiProvider": "anthropic",
-    "aiModel": "claude-3-5-sonnet-20241022",
-    "apiKey": "",
-    "baseURL": ""
-  },
-  "gitHooks": {
-    "enabled": true,
-    "hooks": {
-      "prepareCommitMsg": {
-        "enabled": true,
-        "addTaskInfo": true,
-        "addCoAuthor": true
-      },
-      "postCommit": {
-        "enabled": true,
-        "autoPush": false
-      }
-    }
-  }
+  "taskBoardFile": "docs/05-live-task-board.md",
+  "handoffFile": ".claude/specbios-session.local.md",
+  "recoveryReadOrder": [
+    ".claude/specbios-session.local.md",
+    "docs/05-live-task-board.md",
+    "docs/04-roadmap-and-progress.md",
+    "docs/03-scope-and-mvp.md",
+    "docs/01-architecture.md",
+    "docs/00-project-dossier.md",
+    "docs/02-data-model-and-apis.md"
+  ]
 }

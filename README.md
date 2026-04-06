@@ -33,7 +33,9 @@ claude
 ```
 
 This creates:
-- `.specbios.json` - Project configuration
+- `.specbios.json` - Project recovery configuration
+- `CLAUDE.md` - Recovery protocol for Claude
+- `.claude/specbios-session.local.md` - Short-term session handoff
 - `docs/` - Documentation directory with templates
 
 ### 2. Define your project
@@ -95,14 +97,15 @@ Clear task board shows what's done, what's in progress, and what's next. No more
 ### 🔄 Automatic Context Loading
 
 When you run `/specbios-dispatch`, Claude automatically:
-1. Reads your architecture docs
-2. Understands your scope boundaries
-3. Loads the current task
-4. Starts working
+1. Reads your short-term handoff when available
+2. Reads the live task board and core docs in recovery order
+3. Understands your scope boundaries
+4. Refreshes the current checkpoint before working
+5. Starts working
 
 ### 🚀 Slash Commands Inside Claude Code
 
-The plugin adds native `/specbios-*` commands inside Claude Code, so you can manage docs and tasks without switching back to a separate CLI flow.
+The plugin adds native `/specbios-*` commands inside Claude Code and uses a SessionStart hook plus a short-term handoff file to restore working context inside the same tool.
 
 ## Example Workflow
 
@@ -120,9 +123,9 @@ $ claude
 # Day 2: Continue where you left off
 $ cd my-app
 $ claude
-> /specbios-task-list
+# SessionStart shows the recovery summary from disk state
 > /specbios-dispatch
-# Claude reads the docs and continues working
+# Claude reads the handoff, task board, and docs before continuing
 
 # Week later: Still remembers everything
 $ cd my-app
@@ -130,7 +133,7 @@ $ claude
 > /specbios-task-list
 # Shows all completed and pending tasks
 > /specbios-dispatch
-# Picks up exactly where you left off
+# Reconstructs the working context from files, not old chat history
 ```
 
 ## Why SpecBIOS?
