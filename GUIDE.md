@@ -23,7 +23,7 @@ SpecBIOS 通过以下方式保持项目上下文：
 ### 安装
 
 ```bash
-# 从 GitHub 安装
+# 从 GitHub 安装（仓库必须包含 .claude-plugin/plugin.json）
 claude plugin install https://github.com/xuxijie888-cyber/specbios-plugin
 
 # 或从本地目录安装（用于开发）
@@ -47,9 +47,10 @@ claude
 #### 2. 定义你的项目
 
 编辑 `docs/` 中的文档文件：
+- `00-project-dossier.md` - 项目背景和关键决策
 - `01-architecture.md` - 代码结构设计
 - `03-scope-and-mvp.md` - 要构建的功能（以及不做什么）
-- `04-cognitive-profile.md` - 项目背景和上下文
+- `05-live-task-board.md` - 实时任务板
 
 #### 3. 添加任务
 
@@ -105,8 +106,7 @@ $ claude
 # 第 2 天：从上次中断的地方继续
 $ cd my-app
 $ claude
-# ✓ 检测到 SpecBIOS 项目
-# → T-002 [进行中] 添加数据库连接
+> /specbios-task-list
 > /specbios-dispatch
 # Claude 读取文档并继续工作
 

@@ -39,9 +39,10 @@ This creates:
 ### 2. Define your project
 
 Edit the documentation files in `docs/`:
+- `00-project-dossier.md` - Project background and key decisions
 - `01-architecture.md` - How you want to structure the code
 - `03-scope-and-mvp.md` - What features to build (and what to skip)
-- `04-cognitive-profile.md` - Project background and context
+- `05-live-task-board.md` - Live task board
 
 ### 3. Add tasks
 
@@ -99,9 +100,9 @@ When you run `/specbios-dispatch`, Claude automatically:
 3. Loads the current task
 4. Starts working
 
-### 🚀 Smart Auto-Detection
+### 🚀 Slash Commands Inside Claude Code
 
-When you open a SpecBIOS project, the plugin automatically detects it and shows your current status.
+The plugin adds native `/specbios-*` commands inside Claude Code, so you can manage docs and tasks without switching back to a separate CLI flow.
 
 ## Example Workflow
 
@@ -119,8 +120,7 @@ $ claude
 # Day 2: Continue where you left off
 $ cd my-app
 $ claude
-# ✓ SpecBIOS project detected
-# → T-002 [In Progress] Add database connection
+> /specbios-task-list
 > /specbios-dispatch
 # Claude reads the docs and continues working
 

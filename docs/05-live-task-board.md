@@ -12,9 +12,9 @@
 - [completed] T-005 创建 README 和 GUIDE 文档
 - [completed] T-006 添加 LICENSE 和 .gitignore
 - [completed] T-007 初始化 git 仓库并提交
-- [pending] T-008 创建 GitHub 仓库并推送代码
-- [pending] T-009 完善项目文档（认知档案、架构、范围）
-- [pending] T-010 测试插件安装和基本功能
+- [completed] T-008 创建 GitHub 仓库并推送代码
+- [completed] T-009 完善项目文档（认知档案、架构、范围）
+- [completed] T-010 测试插件安装和基本功能
 - [pending] T-011 优化 skills 实现（错误处理、边界情况）
 - [pending] T-012 添加示例项目和使用演示
 - [pending] T-013 发布到 Claude Code 插件市场
@@ -32,39 +32,40 @@
 - [completed] 创建插件基础结构（plugin.json, 5 skills, 1 hook）
 - [completed] 编写文档（README, GUIDE, LICENSE）
 - [completed] Git 初始化和首次提交
+- [completed] GitHub 发布
+- [completed] 修正 Claude Code 插件结构并验证命令已可识别
 
 ### 当前未开始（高层摘要）
-- [pending] GitHub 发布和测试
-- [pending] 完善项目文档
-- [pending] 优化和发布到插件市场
+- [pending] 优化边界情况
+- [pending] 添加示例与演示
+- [pending] 发布到插件市场
 
 ---
 
 ## 当前推荐任务
 
 ### A. 当前优先级
-- [pending] T-008 创建 GitHub 仓库并推送代码
+- [pending] T-011 优化 skills 实现（错误处理、边界情况）
 
 ### B. 后续任务
-- [pending] T-009 完善项目文档（认知档案、架构、范围）
-- [pending] T-010 测试插件安装和基本功能
+- [pending] T-012 添加示例项目和使用演示
+- [pending] T-013 发布到 Claude Code 插件市场
 
 ## 推荐执行顺序
-1. 完成 T-008 创建 GitHub 仓库并推送
-2. 完成 T-009 完善项目文档
-3. 完成 T-010 测试插件功能
-4. 根据测试结果优化（T-011）
-5. 准备发布（T-012, T-013）
+1. 完成 T-011 优化命令边界情况和错误提示
+2. 完成 T-012 添加示例项目和使用演示
+3. 完成 T-013 发布到 Claude Code 插件市场
+4. 完成 T-014 编写贡献指南和开发文档
 
 ## 阻塞与依赖
 
-### 当前阻塞
-- T-008 需要用户手动在 GitHub 创建 specbios-plugin 仓库
+### 当前无硬阻塞
+当前插件已推送到 GitHub，且本地验证通过。
 
 ### 当前关键依赖
-- T-010（测试）依赖 T-008（GitHub 发布）
-- T-011（优化）依赖 T-010（测试反馈）
-- T-013（发布市场）依赖 T-010, T-011（功能验证）
+- T-012 依赖 T-011（先稳定命令行为）
+- T-013 依赖 T-011, T-012（先验证可用性）
+- T-014 可与 T-013 并行推进
 
 ---
 
