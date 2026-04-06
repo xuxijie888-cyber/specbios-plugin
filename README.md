@@ -1,30 +1,60 @@
 # SpecBIOS Claude Code Plugin
 
+[中文](#中文) | [English](#english)
+
 Documentation-driven AI programming orchestrator for Claude Code.
 
-## What is SpecBIOS?
+---
 
-SpecBIOS solves the biggest problem in AI-assisted programming: **context loss**. When working on long-term projects, AI tools forget what you're building, why you made certain decisions, and what tasks remain.
+## 中文
 
-SpecBIOS keeps your project context alive through:
-- **Persistent documentation** - Architecture, scope, and design decisions stored in markdown files
-- **Task tracking** - Clear task board showing what's done and what's next
-- **Automatic context loading** - AI reads your docs before every task
-- **Executor agnostic** - Works with any AI coding tool
+### 它是什么？
 
-## Installation
+SpecBIOS 是一个面向长期项目的 Claude Code 插件，核心目标是解决 **上下文丢失 / 项目记忆丢失**。
+
+当你做多天、多周的项目时，AI 往往会忘记：
+- 你到底在做什么项目
+- 为什么这样设计
+- 现在做到哪一步了
+- 下一步该做什么
+
+SpecBIOS 通过“文档 + 任务板 + 会话交接文件”把这些状态落到磁盘里，让 Claude Code 在下一次进入项目时还能恢复工作上下文。
+
+### 核心思路
+
+SpecBIOS 现在采用三层恢复结构：
+- **长期真相层**：`docs/` 文档体系
+- **短期交接层**：`.claude/specbios-session.local.md`
+- **启动引导层**：`CLAUDE.md` + `SessionStart` hook
+
+其中：
+- `docs/05-live-task-board.md` 的机器可解析任务区是唯一权威任务源
+- `CLAUDE.md` 告诉 Claude 应该按什么顺序恢复上下文
+- `.claude/specbios-session.local.md` 保存最近一次停点、下一步、阻塞、触碰文件
+
+### 适合谁？
+
+适合这些场景：
+- 你在用 Claude Code 做长期项目
+- 你不想每次开新会话都重新解释项目
+- 你希望任务推进和上下文恢复能落盘保存
+- 你希望工作流尽量留在 Claude Code 内完成
+
+### 安装
 
 ```bash
-# Install from GitHub
+# 从 GitHub 安装
 claude plugin install https://github.com/xuxijie888-cyber/specbios-plugin
 
-# Or install from local directory (for development)
+# 或从本地目录安装（开发时）
 claude plugin install /path/to/specbios-claude-plugin
 ```
 
-## Quick Start
+> 插件仓库需要包含 `.claude-plugin/plugin.json`
 
-### 1. Initialize a new project
+### 快速开始
+
+#### 1. 初始化项目
 
 ```bash
 cd your-project
@@ -32,21 +62,170 @@ claude
 > /specbios-init
 ```
 
-This creates:
-- `.specbios.json` - Project recovery configuration
-- `CLAUDE.md` - Recovery protocol for Claude
-- `.claude/specbios-session.local.md` - Short-term session handoff
-- `docs/` - Documentation directory with templates
+初始化后会创建：
+- `.specbios.json` - 恢复配置中心
+- `CLAUDE.md` - Claude 的恢复协议
+- `.claude/specbios-session.local.md` - 短期会话交接文件
+- `docs/` - 项目文档目录
 
-### 2. Define your project
+#### 2. 填写核心文档
 
-Edit the documentation files in `docs/`:
-- `00-project-dossier.md` - Project background and key decisions
-- `01-architecture.md` - How you want to structure the code
-- `03-scope-and-mvp.md` - What features to build (and what to skip)
-- `05-live-task-board.md` - Live task board
+优先补这些文件：
+- `docs/00-project-dossier.md` - 项目背景和关键判断
+- `docs/01-architecture.md` - 架构设计
+- `docs/03-scope-and-mvp.md` - 范围边界
+- `docs/05-live-task-board.md` - 实时任务板
 
-### 3. Add tasks
+#### 3. 添加任务
+
+```bash
+> /specbios-task-add "实现用户登录"
+> /specbios-task-add "添加密码重置"
+> /specbios-task-add "创建用户资料页"
+```
+
+#### 4. 开始推进
+
+```bash
+> /specbios-dispatch
+```
+
+Claude 会：
+1. 先读取短期 handoff（如果存在）
+2. 再按恢复顺序读取任务板和核心 docs
+3. 选出当前任务
+4. 刷新 checkpoint
+5. 开始执行任务
+
+#### 5. 下次继续
+
+下次重新进入项目时：
+- `CLAUDE.md` 会先提供恢复协议
+- SessionStart hook 会注入恢复摘要
+- Claude 会优先从磁盘上的 handoff / task board 恢复，而不是依赖旧聊天记录
+
+### 可用命令
+
+| 命令 | 说明 |
+|------|------|
+| `/specbios-init` | 初始化 SpecBIOS 项目 |
+| `/specbios-task-add "描述"` | 添加任务 |
+| `/specbios-task-list` | 查看任务 |
+| `/specbios-task-update T-001 completed` | 更新任务状态 |
+| `/specbios-dispatch` | 执行当前任务 |
+
+### 恢复工作流示例
+
+```bash
+# 第 1 天
+$ cd my-app
+$ claude
+> /specbios-init my-app
+> /specbios-task-add "搭建 Express 服务器"
+> /specbios-dispatch
+
+# 第 2 天
+$ cd my-app
+$ claude
+# SessionStart 自动显示恢复摘要
+> /specbios-dispatch
+
+# 一周后
+$ cd my-app
+$ claude
+> /specbios-task-list
+> /specbios-dispatch
+# 继续从磁盘状态恢复，而不是从旧聊天记忆恢复
+```
+
+### 为什么这个插件现在更重要？
+
+因为当前增强版已经不只是“把 SpecBIOS 命令搬进 Claude Code”，而是补上了真正的恢复闭环：
+- 有恢复配置中心
+- 有短期 handoff
+- 有 SessionStart 自动恢复摘要
+- 有稳定的恢复顺序
+- 有任务板机器区作为唯一任务真相
+
+### 相关链接
+
+- GitHub: https://github.com/xuxijie888-cyber/specbios
+- npm: https://www.npmjs.com/package/specbios
+- Issues: https://github.com/xuxijie888-cyber/specbios/issues
+
+---
+
+## English
+
+### What is it?
+
+SpecBIOS is a Claude Code plugin for long-running projects. Its main goal is to solve **context loss / project memory loss**.
+
+When you work across multiple days or weeks, AI tools often forget:
+- what you are building
+- why certain decisions were made
+- where the project currently stands
+- what should happen next
+
+SpecBIOS persists that state to disk through docs, a live task board, and a short-term session handoff file so Claude Code can reconstruct working context in later sessions.
+
+### Core idea
+
+SpecBIOS now uses a three-layer recovery model:
+- **Long-term truth layer**: the `docs/` system
+- **Short-term handoff layer**: `.claude/specbios-session.local.md`
+- **Startup guidance layer**: `CLAUDE.md` + `SessionStart` hook
+
+In this model:
+- the machine-parseable section in `docs/05-live-task-board.md` is the only authoritative task source
+- `CLAUDE.md` tells Claude how to recover context
+- `.claude/specbios-session.local.md` stores the latest stop point, next step, blockers, and touched files
+
+### Who is this for?
+
+This plugin is a good fit if:
+- you use Claude Code for long-running projects
+- you do not want to re-explain the whole project every session
+- you want task progress and recovery state to live on disk
+- you want the workflow to stay inside Claude Code as much as possible
+
+### Installation
+
+```bash
+# Install from GitHub
+claude plugin install https://github.com/xuxijie888-cyber/specbios-plugin
+
+# Or install from a local directory (for development)
+claude plugin install /path/to/specbios-claude-plugin
+```
+
+> The plugin repo must include `.claude-plugin/plugin.json`.
+
+### Quick Start
+
+#### 1. Initialize a project
+
+```bash
+cd your-project
+claude
+> /specbios-init
+```
+
+Initialization creates:
+- `.specbios.json` - recovery configuration center
+- `CLAUDE.md` - Claude recovery protocol
+- `.claude/specbios-session.local.md` - short-term session handoff
+- `docs/` - project documentation directory
+
+#### 2. Fill in the core docs
+
+Start with these files:
+- `docs/00-project-dossier.md` - project background and key decisions
+- `docs/01-architecture.md` - architecture design
+- `docs/03-scope-and-mvp.md` - scope boundaries
+- `docs/05-live-task-board.md` - live task board
+
+#### 3. Add tasks
 
 ```bash
 > /specbios-task-add "Implement user login"
@@ -54,126 +233,75 @@ Edit the documentation files in `docs/`:
 > /specbios-task-add "Create user profile page"
 ```
 
-### 4. Start working
+#### 4. Start work
 
 ```bash
 > /specbios-dispatch
 ```
 
 Claude will:
-- Read your documentation
-- Understand the current task
-- Write the code
-- Update the task board when done
+1. read the short-term handoff first when available
+2. read the task board and core docs in recovery order
+3. select the current task
+4. refresh the checkpoint
+5. start executing the task
 
-### 5. Continue with next task
+#### 5. Continue later
 
-```bash
-> /specbios-dispatch
-```
+When you return to the project later:
+- `CLAUDE.md` provides the recovery protocol
+- the SessionStart hook injects a recovery summary
+- Claude reconstructs context from handoff + task board + docs instead of relying on stale chat memory
 
-Repeat until all tasks are complete!
-
-## Available Commands
+### Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `/specbios-init` | Initialize a new SpecBIOS project |
-| `/specbios-task-add "description"` | Add a new task |
-| `/specbios-task-list` | View all tasks |
-| `/specbios-task-update T-001 completed` | Update task status |
+| `/specbios-init` | Initialize a SpecBIOS project |
+| `/specbios-task-add "description"` | Add a task |
+| `/specbios-task-list` | View tasks |
+| `/specbios-task-update T-001 completed` | Update a task status |
 | `/specbios-dispatch` | Execute the current task |
 
-## Key Features
-
-### 🎯 Documentation-Driven
-
-Your requirements live in markdown files, not in chat history. AI reads them every time, so context never gets lost.
-
-### 📋 Task Tracking
-
-Clear task board shows what's done, what's in progress, and what's next. No more "what was I working on?"
-
-### 🔄 Automatic Context Loading
-
-When you run `/specbios-dispatch`, Claude automatically:
-1. Reads your short-term handoff when available
-2. Reads the live task board and core docs in recovery order
-3. Understands your scope boundaries
-4. Refreshes the current checkpoint before working
-5. Starts working
-
-### 🚀 Slash Commands Inside Claude Code
-
-The plugin adds native `/specbios-*` commands inside Claude Code and uses a SessionStart hook plus a short-term handoff file to restore working context inside the same tool.
-
-## Example Workflow
+### Recovery workflow example
 
 ```bash
-# Day 1: Start a new project
+# Day 1
 $ cd my-app
 $ claude
 > /specbios-init my-app
-> [Edit docs/01-architecture.md to define structure]
-> /specbios-task-add "Setup Express server"
-> /specbios-task-add "Add database connection"
+> /specbios-task-add "Set up Express server"
 > /specbios-dispatch
-# Claude builds the Express server
 
-# Day 2: Continue where you left off
+# Day 2
 $ cd my-app
 $ claude
-# SessionStart shows the recovery summary from disk state
+# SessionStart automatically shows the recovery summary
 > /specbios-dispatch
-# Claude reads the handoff, task board, and docs before continuing
 
-# Week later: Still remembers everything
+# A week later
 $ cd my-app
 $ claude
 > /specbios-task-list
-# Shows all completed and pending tasks
 > /specbios-dispatch
-# Reconstructs the working context from files, not old chat history
+# Resume from disk-backed state rather than old chat memory
 ```
 
-## Why SpecBIOS?
+### Why this plugin matters now
 
-### The Problem
+The enhanced plugin is no longer just “SpecBIOS commands inside Claude Code.” It now includes a real recovery loop:
+- a recovery configuration center
+- short-term handoff state
+- SessionStart recovery summaries
+- a stable recovery order
+- one authoritative task truth source in the machine-parseable task board
 
-Traditional AI coding tools:
-- ❌ Forget context between sessions
-- ❌ Lose track of what's been done
-- ❌ Don't remember architectural decisions
-- ❌ Require re-explaining the project constantly
-
-### The Solution
-
-SpecBIOS:
-- ✅ Persistent documentation keeps context alive
-- ✅ Task board tracks progress automatically
-- ✅ Architecture docs guide every decision
-- ✅ Works across sessions, days, weeks
-
-## CLI Tool
-
-This plugin works alongside the SpecBIOS CLI tool for advanced features:
-- Dependency analysis
-- Executor recommendation
-- AI-powered task splitting
-
-Install the CLI:
-```bash
-npm install -g specbios
-```
-
-Learn more: https://github.com/xuxijie888-cyber/specbios
-
-## License
-
-MIT
-
-## Links
+### Related Links
 
 - GitHub: https://github.com/xuxijie888-cyber/specbios
 - npm: https://www.npmjs.com/package/specbios
 - Issues: https://github.com/xuxijie888-cyber/specbios/issues
+
+## License
+
+MIT
