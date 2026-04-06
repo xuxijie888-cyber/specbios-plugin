@@ -1,8 +1,19 @@
 {
   "name": "specbios",
   "version": "1.0.0",
-  "description": "Documentation-driven AI programming orchestrator for Claude Code",
+  "description": "Documentation-driven project memory recovery and task orchestration for Claude Code.",
   "author": {
-    "name": "SpecBIOS Team"
-  }
+    "name": "SpecBIOS Team",
+    "url": "https://github.com/xuxijie888-cyber/specbios-plugin"
+  },
+  "homepage": "https://github.com/xuxijie888-cyber/specbios-plugin",
+  "repository": "https://github.com/xuxijie888-cyber/specbios-plugin",
+  "license": "MIT",
+  "keywords": [
+    "documentation",
+    "context-recovery",
+    "project-memory",
+    "task-board",
+    "claude-code"
+  ]
 }

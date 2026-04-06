@@ -126,6 +126,18 @@ $ claude
 # 根据磁盘文件恢复工作上下文，而不是依赖旧聊天记录
 ```
 
+### 内置示例项目
+
+仓库内置了一个可直接演示的示例项目：
+- `examples/recovery-demo/`
+
+建议演示步骤：
+1. 进入该目录
+2. 用本插件启动 Claude Code
+3. 查看 SessionStart 恢复摘要
+4. 运行 `/specbios-task-list`
+5. 运行 `/specbios-dispatch`
+
 ---
 
 <a name="english"></a>
@@ -251,6 +263,18 @@ $ claude
 > /specbios-dispatch
 # Reconstructs the working context from files, not old chat history
 ```
+
+### Built-in Example Project
+
+The repository includes a ready-to-demo example project:
+- `examples/recovery-demo/`
+
+Suggested demo steps:
+1. enter that directory
+2. start Claude Code with this plugin loaded
+3. inspect the SessionStart recovery summary
+4. run `/specbios-task-list`
+5. run `/specbios-dispatch`
 
 ## Links
 
